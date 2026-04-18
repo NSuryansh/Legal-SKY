@@ -1,18 +1,6 @@
-"""
-Legal Query Wrapper
-Extracted from: wrapper notebook
-Main entry point for the Legal-SKY pipeline
-
-This module orchestrates the complete legal query processing:
-1. Intent classification
-2. RAG pipeline execution
-3. Answer translation back to original language
-"""
-
 from modules.intent_classifier import sementic_intent_classification
 from modules.rag_pipeline import run_rag_pipeline
 from modules.sarvam_translation import translate_rag_output
-
 
 def handle_user_query(query: str, original_language: str = "en-IN") -> dict:
     """
@@ -56,43 +44,43 @@ def handle_user_query(query: str, original_language: str = "en-IN") -> dict:
     
     try:
         # Step 1: Classify intent
-        print(f"Step 1: Classifying intent for query: {query[:50]}...")
-        intent_result = sementic_intent_classification(query)
-        intents = intent_result["intents"]
-        print(f"   Detected intents: {intents}")
-        
+        # print(f"Step 1: Classifying intent for query: {query[:50]}...")
+        # intent_result = sementic_intent_classification(query)
+        # intents = intent_result["intents"]
+        # print(f"   Detected intents: {intents}")
+        intents = ["legal_advice"]
         # Step 2: Run RAG pipeline
         print(f"Step 2: Running RAG pipeline...")
         rag_result = run_rag_pipeline(query, intents)
         final_answer_en = rag_result["final_answer"]
-        print(f"   Generated answer ({len(final_answer_en)} chars)")
+        print(f"Generated answer ({len(final_answer_en)} chars)")
         
         # Step 3: Translate back to original language
-        if original_language and original_language != "en-IN":
-            print(f"Step 3: Translating to {original_language}...")
-            final_answer = translate_rag_output(
-                final_answer_en, 
-                target_language=original_language
-            )
-            print(f"   Translated answer ({len(final_answer)} chars)")
-        else:
-            final_answer = final_answer_en
+        # if original_language and original_language != "en-IN":
+        #     print(f"Step 3: Translating to {original_language}...")
+        #     final_answer = translate_rag_output(
+        #         final_answer_en, 
+        #         target_language=original_language
+        #     )
+        #     print(f"   Translated answer ({len(final_answer)} chars)")
+        # else:
+        #     final_answer = final_answer_en
         
         # Return complete result
         return {
             "status": "success",
             "query": query,
-            "original_language": original_language,
-            "intents": intents,
-            "intent_scores": intent_result.get("scores", {}),
+            # "original_language": original_language,
+            # "intents": intents,
+            # "intent_scores": intent_result.get("scores", {}),
             "answer_parts": rag_result.get("answer_parts", {}),
             "sources": rag_result.get("sources", []),
             "action_pack": rag_result.get("action_pack", ""),
-            "final_answer": final_answer,
+            "final_answer": final_answer_en,
         }
     
     except Exception as e:
-        print(f"❌ Error in handle_user_query: {e}")
+        print(f"Error in handle_user_query: {e}")
         import traceback
         traceback.print_exc()
         
