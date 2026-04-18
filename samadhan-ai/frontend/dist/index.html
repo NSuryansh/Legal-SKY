@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Samadhan AI - Complete Legal-SKY Integration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .chat-message { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .recording { animation: pulse 1.5s ease-in-out infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .source-card { transition: all 0.2s; }
+        .source-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen">
+        <aside class="w-64 gradient-bg text-white flex-shrink-0">
+            <div class="p-6">
+                <h1 class="text-2xl font-bold mb-2">Samadhan AI</h1>
+                <p class="text-xs text-white text-opacity-80 mb-8">Legal-SKY Powered</p>
+                <nav class="space-y-2">
+                    <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-lg bg-white bg-opacity-20"><span>🏠</span><span>Home</span></a>
+                    <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-white hover:bg-opacity-10"><span>🎤</span><span>Voice Query</span></a>
+                    <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-white hover:bg-opacity-10"><span>📄</span><span>Documents</span></a>
+                    <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-white hover:bg-opacity-10"><span>⚖️</span><span>Legal Services</span></a>
+                </nav>
+            </div>
+        </aside>
+        <div class="flex-1 flex flex-col">
+            <header class="bg-white border-b border-gray-200 px-8 py-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xl font-semibold text-gray-800">Legal Query Interface</h2>
+                    <span class="text-sm text-gray-600">🤖 Auto Detection • RAG • Citations • Action Packs</span>
+                </div>
+            </header>
+            <main class="flex-1 overflow-hidden">
+                <div class="h-full max-w-5xl mx-auto p-8 flex flex-col">
+                    <div class="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg">
+                        <h3 class="text-sm font-semibold text-blue-800 mb-1">✨ Complete Legal-SKY Pipeline</h3>
+                        <p class="text-xs text-blue-600">Automatic Language Detection → Intent Classification → RAG Pipeline → Source Citations → Action Packs<br/>Supports: Hindi, Bengali, Telugu, Marathi, Tamil, Gujarati, Kannada, Malayalam, Punjabi</p>
+                    </div>
+                    <div id="chatContainer" class="flex-1 overflow-y-auto mb-6 space-y-4 bg-white rounded-lg border border-gray-200 p-6">
+                        <div class="text-center text-gray-500 py-8">
+                            <p class="text-lg">🎤 Press the microphone button below</p>
+                            <p class="text-sm mt-2">Ask any legal question in ANY Indian language!</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-center space-y-4">
+                        <button id="recordButton" class="w-20 h-20 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center text-3xl shadow-lg transition-all">🎤</button>
+                        <p id="statusText" class="text-sm text-gray-600">Click to start recording</p>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    <script>
+        let mediaRecorder, audioChunks = [], isRecording = false;
+        const recordButton = document.getElementById('recordButton');
+        const statusText = document.getElementById('statusText');
+        const chatContainer = document.getElementById('chatContainer');
+        
+        recordButton.addEventListener('click', toggleRecording);
+        
+        async function toggleRecording() {
+            isRecording ? stopRecording() : await startRecording();
+        }
+        
+        async function startRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+                mediaRecorder.onstop = async () => {
+                    await processAudio(new Blob(audioChunks, { type: 'audio/webm' }));
+                    stream.getTracks().forEach(t => t.stop());
+                };
+                mediaRecorder.start();
+                isRecording = true;
+                recordButton.classList.add('recording', 'bg-red-600');
+                recordButton.classList.remove('bg-blue-600');
+                statusText.textContent = '🔴 Recording... Click to stop';
+            } catch (error) {
+                addMessage('❌ Microphone access denied. Please allow microphone permission.', 'error');
+            }
+        }
+        
+        function stopRecording() {
+            if (mediaRecorder && isRecording) {
+                mediaRecorder.stop();
+                isRecording = false;
+                recordButton.classList.remove('recording', 'bg-red-600');
+                recordButton.classList.add('bg-blue-600');
+                statusText.textContent = 'Processing...';
+            }
+        }
+        
+        async function processAudio(audioBlob) {
+            try {
+                const reader = new FileReader();
+                reader.readAsDataURL(audioBlob);
+                reader.onloadend = async function() {
+                    let base64Audio = reader.result.split(',')[1];
+                    addMessage('🔍 Processing your legal query...', 'system');
+                    
+                    try {
+                        const response = await fetch('/api/legal-query', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({ audio_data: base64Audio })
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        }
+                        
+                        const data = await response.json();
+                        console.log('✅ API Response:', data);
+                        
+                        if (data.success && data.status === 'success') {
+                            const langs = {
+                                'hi-IN': 'Hindi (हिंदी)', 'bn-IN': 'Bengali (বাংলা)', 'te-IN': 'Telugu (తెలుగు)',
+                                'mr-IN': 'Marathi (मराठी)', 'ta-IN': 'Tamil (தமிழ்)', 'gu-IN': 'Gujarati (ગુજરાતી)',
+                                'kn-IN': 'Kannada (ಕನ್ನಡ)', 'ml-IN': 'Malayalam (മലയാളം)', 'pa-IN': 'Punjabi (ਪੰਜਾਬੀ)'
+                            };
+                            const detectedLang = langs[data.detected_language] || data.detected_language || 'Unknown';
+                            
+                            // Show detected language and query
+                            addMessage(`✅ Detected Language: ${detectedLang}`, 'system');
+                            addMessage(data.regional_input, 'user', `Your Query (${detectedLang})`);
+                            addMessage(data.english_query, 'system', 'English Translation');
+                            
+                            // Show detected intents
+                            if (data.intents && data.intents.length > 0) {
+                                const intentMap = {
+                                    'legal_qa': '⚖️ Legal Q&A',
+                                    'scheme_query': '📋 Government Schemes',
+                                    'ipc_bns_comparison': '📚 IPC/BNS Comparison',
+                                    'legal_summarization': '📝 Legal Summarization'
+                                };
+                                const intentLabels = data.intents.map(i => intentMap[i] || i).join(', ');
+                                addMessage(`🎯 Detected Intents: ${intentLabels}`, 'system');
+                            }
+                            
+                            // Show legal answer
+                            addLegalAnswer(data.legal_answer);
+                            
+                            // Show sources if available
+                            if (data.sources && data.sources.length > 0) {
+                                addSources(data.sources);
+                            }
+                            
+                            // Show action pack if available
+                            if (data.action_pack && data.action_pack.trim()) {
+                                addActionPack(data.action_pack);
+                            }
+                        } else {
+                            const errorMsg = data.error || data.message || 'Unknown error occurred';
+                            addMessage(`❌ Error: ${errorMsg}`, 'error');
+                            console.error('❌ API returned error:', data);
+                        }
+                    } catch (fetchError) {
+                        console.error('❌ Fetch error:', fetchError);
+                        addMessage(`❌ Network Error: ${fetchError.message}`, 'error');
+                    }
+                    
+                    statusText.textContent = 'Click to start recording';
+                };
+            } catch (error) {
+                console.error('❌ Processing error:', error);
+                addMessage(`❌ Error: ${error.message}`, 'error');
+                statusText.textContent = 'Click to start recording';
+            }
+        }
+        
+        function addMessage(text, type, label = '') {
+            if (chatContainer.children.length === 1 && chatContainer.children[0].textContent.includes('Press')) {
+                chatContainer.innerHTML = '';
+            }
+            const div = document.createElement('div');
+            div.className = 'chat-message';
+            if (type === 'user') {
+                div.innerHTML = `<div class="flex justify-end"><div class="max-w-xl px-4 py-3 rounded-lg bg-blue-600 text-white"><p class="text-xs text-blue-100 mb-1">${label}</p><p class="font-medium">${text}</p></div></div>`;
+            } else if (type === 'assistant') {
+                div.innerHTML = `<div class="flex justify-start"><div class="max-w-xl px-4 py-3 rounded-lg bg-gray-200 text-gray-800"><p class="text-xs text-gray-600 mb-1">${label}</p><p class="font-medium">${text}</p></div></div>`;
+            } else if (type === 'system') {
+                div.innerHTML = `<div class="flex justify-center"><div class="px-4 py-2 rounded-lg bg-yellow-100 text-yellow-800 text-sm">${text}</div></div>`;
+            } else if (type === 'error') {
+                div.innerHTML = `<div class="flex justify-center"><div class="px-4 py-2 rounded-lg bg-red-100 text-red-800 text-sm font-semibold">${text}</div></div>`;
+            }
+            chatContainer.appendChild(div);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        function addLegalAnswer(answer) {
+            const div = document.createElement('div');
+            div.className = 'chat-message';
+            div.innerHTML = `
+                <div class="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-4">
+                    <h4 class="text-sm font-bold text-green-800 mb-2 flex items-center"><span class="mr-2">⚖️</span>Legal Answer</h4>
+                    <div class="text-gray-800 whitespace-pre-wrap">${answer}</div>
+                </div>
+            `;
+            chatContainer.appendChild(div);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        function addSources(sources) {
+            const div = document.createElement('div');
+            div.className = 'chat-message';
+            
+            let sourcesHTML = `
+                <div class="bg-white border border-gray-300 rounded-lg p-4">
+                    <h4 class="text-sm font-bold text-gray-800 mb-3 flex items-center"><span class="mr-2">📚</span>Source Citations (${sources.length})</h4>
+                    <div class="space-y-2">
+            `;
+            
+            sources.slice(0, 5).forEach((source, idx) => {
+                const title = source.title || 'Untitled';
+                const page = source.page ? `Page ${source.page}` : '';
+                const text = source.text ? source.text.substring(0, 150) + '...' : '';
+                const score = source.score ? `${(source.score * 100).toFixed(1)}%` : '';
+                
+                sourcesHTML += `
+                    <div class="source-card bg-gray-50 p-3 rounded border border-gray-200">
+                        <div class="flex justify-between items-start mb-1">
+                            <p class="text-xs font-semibold text-blue-700">${idx + 1}. ${title}</p>
+                            ${score ? `<span class="text-xs text-gray-500">${score}</span>` : ''}
+                        </div>
+                        ${page ? `<p class="text-xs text-gray-600 mb-1">${page}</p>` : ''}
+                        ${text ? `<p class="text-xs text-gray-700">${text}</p>` : ''}
+                    </div>
+                `;
+            });
+            
+            sourcesHTML += `
+                    </div>
+                </div>
+            `;
+            
+            div.innerHTML = sourcesHTML;
+            chatContainer.appendChild(div);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        function addActionPack(actionPack) {
+            const div = document.createElement('div');
+            div.className = 'chat-message';
+            div.innerHTML = `
+                <div class="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-4">
+                    <h4 class="text-sm font-bold text-purple-800 mb-2 flex items-center"><span class="mr-2">📋</span>Citizen Action Pack</h4>
+                    <div class="text-gray-800 text-sm whitespace-pre-wrap">${actionPack}</div>
+                </div>
+            `;
+            chatContainer.appendChild(div);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+    </script>
+</body>
+</html>

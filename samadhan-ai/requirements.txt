@@ -1,0 +1,26 @@
+# Samadhan AI - Simplified Requirements
+# Lightweight version for faster deployment
+
+# ============================================================================
+# CORE WEB FRAMEWORK
+# ============================================================================
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+starlette==0.35.1
+
+# ============================================================================
+# HTTP CLIENT & DATA VALIDATION
+# ============================================================================
+requests==2.31.0
+pydantic==2.5.3
+python-multipart==0.0.6
+python-dotenv==1.0.0
+
+# ============================================================================
+# MINIMAL DEPENDENCIES FOR LEGAL-SKY
+# ============================================================================
+# Note: Using simplified keyword-based approach
+# No heavy ML models needed for now
+
+# Typing extensions (for compatibility)
+typing-extensions==4.9.0

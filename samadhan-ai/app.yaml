@@ -1,0 +1,29 @@
+# Databricks App Configuration for Samadhan AI
+# This deploys the full-stack application on Databricks platform
+
+name: samadhan-ai
+description: "Sovereign AI Portal - Legal services in regional languages"
+
+# Runtime configuration
+compute:
+  spec:
+    # Use serverless compute for automatic scaling
+    kind: serverless
+  
+# Environment variables
+env:
+  - name: SARVAM_API_KEY
+    value: sk_sn9w8roe_QwQ3Sc7Xa9acvNvTh5iV8Iek
+
+# Application entrypoint
+command:
+  - "python"
+  - "app.py"
+
+# Port configuration (MUST MATCH app.py uvicorn port)
+port: 8000
+
+# Resource requirements
+resources:
+  memory: "2Gi"
+  cpu: "1"
