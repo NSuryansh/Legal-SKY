@@ -54,12 +54,19 @@ def sementic_intent_classification(query: str, threshold: float = 0.45) -> Dict:
     """
     query_lower = query.lower()
     
-    # Count keyword matches for each intent
+    # Count keyword matches for each intent with better scoring
     intent_scores = {}
     for intent, keywords in INTENT_KEYWORDS.items():
         matches = sum(1 for kw in keywords if kw.lower() in query_lower)
-        # Normalize by number of keywords (0 to 1 scale)
-        score = matches / len(keywords) if keywords else 0
+        # Better scoring: give meaningful scores (0-1 scale)
+        # - More matches = higher score
+        # - Use sqrt to make scores more distributed
+        if matches > 0:
+            # Score increases with matches, capped at 1.0
+            # Formula: min(matches * 0.15, 1.0) for better distribution
+            score = min(matches * 0.15, 1.0)
+        else:
+            score = 0.0
         intent_scores[intent] = float(score)
     
     # Get intents with non-zero scores

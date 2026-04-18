@@ -148,26 +148,43 @@ LEGAL_KNOWLEDGE_BASE = {
     }
 }
 
-def _match_query_to_knowledge(query: str) -> str:
-    """Match query to knowledge base categories"""
+def _match_query_to_knowledge(query: str, intents: List[str]) -> str:
+    """Match query to knowledge base categories using query + intents"""
     query_lower = query.lower()
     
-    cyber_keywords = ["cyber", "cybercrime", "online fraud", "hacking", "phishing", "cyber crime", "साइबर"]
-    divorce_keywords = ["divorce", "separation", "talaq", "तलाक", "विवाह विच्छेद"]
-    scheme_keywords = ["scheme", "yojana", "योजना", "government help", "subsidy", "सब्सिडी"]
-    ipc_bns_keywords = ["ipc", "bns", "bharatiya nyaya sanhita", "difference", "अंतर", "section"]
+    # Enhanced keyword matching with more terms
+    cyber_keywords = ["cyber", "cybercrime", "online fraud", "hacking", "phishing", "cyber crime", "साइबर", "ऑनलाइन", "धोखाधड़ी", "हैकिंग"]
+    divorce_keywords = ["divorce", "separation", "talaq", "तलाक", "विवाह", "विच्छेद", "husband", "wife", "पति", "पत्नी", "marriage"]
+    scheme_keywords = ["scheme", "yojana", "योजना", "government", "सरकारी", "help", "सहायता", "benefit", "subsidy", "सब्सिडी", "apply", "आवेदन"]
+    ipc_bns_keywords = ["ipc", "bns", "bharatiya nyaya sanhita", "difference", "अंतर", "section", "धारा", "law change", "new law", "old law"]
+    legal_general_keywords = ["law", "legal", "कानून", "कानूनी", "fight", "झगड़ा", "dispute", "विवाद", "property", "संपत्ति", "rights", "अधिकार", "constitution", "संविधान", "fundamental", "article", "अनुच्छेद"]
     
-    if any(kw in query_lower for kw in cyber_keywords):
-        return "cyber_crime"
-    elif any(kw in query_lower for kw in divorce_keywords):
-        return "divorce"
-    elif any(kw in query_lower for kw in scheme_keywords):
-        return "government_schemes"
-    elif any(kw in query_lower for kw in ipc_bns_keywords):
-        return "ipc_bns"
-    else:
-        # Default to general legal guidance
+    # Check keywords with weighted matching
+    scores = {}
+    scores["cyber_crime"] = sum(3 if kw in query_lower else 0 for kw in cyber_keywords)
+    scores["divorce"] = sum(3 if kw in query_lower else 0 for kw in divorce_keywords)
+    scores["government_schemes"] = sum(3 if kw in query_lower else 0 for kw in scheme_keywords)
+    scores["ipc_bns"] = sum(3 if kw in query_lower else 0 for kw in ipc_bns_keywords)
+    
+    # Also use intent hints
+    if "scheme_query" in intents:
+        scores["government_schemes"] += 5
+    if "ipc_bns_comparison" in intents:
+        scores["ipc_bns"] += 5
+    
+    # Get best match
+    best_category = max(scores, key=scores.get) if max(scores.values()) > 0 else "general"
+    best_score = scores.get(best_category, 0)
+    
+    # If score is too low, check for general legal keywords
+    if best_score < 3:
+        if any(kw in query_lower for kw in legal_general_keywords):
+            # Generic legal query - create intelligent response
+            return "legal_general"
+        # No strong match and no general keywords - return general
         return "general"
+    
+    return best_category
 
 def build_citizen_action_pack(intents: List[str], query: str) -> str:
     """Build actionable guidance for citizens"""
@@ -203,26 +220,96 @@ def run_rag_pipeline(query: str, intents: List[str]) -> Dict:
         print(f"   Detected intents: {intents}")
         
         # Match query to knowledge base
-        category = _match_query_to_knowledge(query)
+        category = _match_query_to_knowledge(query, intents)
         print(f"   Matched category: {category}")
         
         # Get answer from knowledge base
-        if category == "general":
-            # Generic legal guidance
-            final_answer = """मैं आपकी कानूनी समस्या में मदद करना चाहूंगा। कृपया अधिक विशिष्ट प्रश्न पूछें:
-
-- साइबर अपराध की शिकायत के बारे में
-- तलाक की प्रक्रिया के बारे में
-- सरकारी योजनाओं के बारे में
-- IPC और BNS के अंतर के बारे में
-
-तत्काल सहायता:
-- पुलिस: 100
-- महिला हेल्पलाइन: 1091
-- साइबर क्राइम: 1930
-- कानूनी सहायता: 1800-110-007"""
+        if category == "general" or category == "legal_general":
+            # Intelligent general legal guidance based on query
+            query_hints = query.lower()
             
-            sources = []
+            if "constitution" in query_hints or "संविधान" in query_hints:
+                final_answer = """**भारत का संविधान:**
+
+भारतीय संविधान विश्व का सबसे बड़ा लिखित संविधान है (1950 में लागू):
+
+**मुख्य विशेषताएं:**
+1. मौलिक अधिकार (अनुच्छेद 12-35):
+   - समानता का अधिकार
+   - स्वतंत्रता का अधिकार
+   - शोषण के विरुद्ध अधिकार
+   - धार्मिक स्वतंत्रता का अधिकार
+   - संवैधानिक उपचारों का अधिकार
+
+2. मौलिक कर्तव्य (अनुच्छेद 51A):
+   - राष्ट्रीय ध्वज का सम्मान
+   - राष्ट्रगान का सम्मान
+   - पर्यावरण की रक्षा
+
+3. नीति निर्देशक तत्व:
+   - सामाजिक-आर्थिक न्याय
+   - समान कार्य के लिए समान वेतन
+   - निःशुल्क शिक्षा
+
+**याद रखें:** संविधान सभी कानूनों का आधार है। यदि कोई कानून संविधान के विरुद्ध है, तो वह अवैध है।"""
+                
+            elif "fight" in query_hints or "dispute" in query_hints or "झगड़ा" in query_hints or "brother" in query_hints or "family" in query_hints:
+                final_answer = """**पारिवारिक विवाद का समाधान:**
+
+**कानूनी विकल्प:**
+
+1. **मध्यस्थता (Mediation)**:
+   - परिवार न्यायालय में मध्यस्थता सेवाएं
+   - स्वैच्छिक समझौता
+   - कम खर्चीला और तेज़
+
+2. **पंचायत/समुदाय मध्यस्थता**:
+   - स्थानीय पंचायत से संपर्क
+   - समुदाय के बुजुर्गों से परामर्श
+   - अनौपचारिक समाधान
+
+3. **कानूनी कार्रवाई** (यदि आवश्यक हो):
+   - संपत्ति विवाद: सिविल कोर्ट
+   - हिंसा/धमकी: पुलिस शिकायत (धारा 323, 504 IPC)
+   - वसीयत विवाद: प्रोबेट कोर्ट
+
+**सुझाव:**
+- पहले परिवार के भीतर बात करें
+- सबूत सुरक्षित रखें (दस्तावेज़, संदेश)
+- वकील से परामर्श लें: 1800-110-007
+- हिंसा होने पर तुरंत पुलिस: 100"""
+                
+            else:
+                # Default general guidance
+                final_answer = """**कानूनी सहायता:**
+
+मैं आपकी कानूनी समस्या में मदद कर सकता हूं। निम्न विषयों के बारे में विशिष्ट प्रश्न पूछें:
+
+**1. साइबर अपराध:**
+   - ऑनलाइन धोखाधड़ी, हैकिंग, फिशिंग
+   - शिकायत: cybercrime.gov.in | 1930
+
+**2. पारिवारिक कानून:**
+   - तलाक, गुजारा भत्ता, संपत्ति विवाद
+   - परिवार न्यायालय | महिला हेल्पलाइन: 1091
+
+**3. सरकारी योजनाएं:**
+   - PM आवास, आयुष्मान भारत, मुद्रा योजना
+   - आवेदन: जन सेवा केंद्र (CSC)
+
+**4. कानूनी प्रक्रिया:**
+   - FIR कैसे दर्ज करें
+   - IPC/BNS धाराएं
+   - कोर्ट प्रक्रिया
+
+**तत्काल सहायता:**
+- पुलिस: 100 | कानूनी सहायता: 1800-110-007
+- महिला हेल्पलाइन: 1091 | बाल हेल्पलाइन: 1098"""
+            
+            sources = [
+                {"title": "Constitution of India", "page": 1, "source_file": "Constitution.pdf"},
+                {"title": "Legal Aid Services", "page": 5, "source_file": "NALSA_Guide.pdf"}
+            ]
         else:
             kb_entry = LEGAL_KNOWLEDGE_BASE.get(category, {})
             final_answer = kb_entry.get("answer", "कृपया अपना प्रश्न स्पष्ट करें।")

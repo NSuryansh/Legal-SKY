@@ -1,0 +1,16 @@
+name: legal-sky-test
+description: Minimal test deployment
+compute:
+  spec:
+    kind: serverless
+command:
+- uvicorn
+- app:app
+- --host
+- 0.0.0.0
+- --port
+- '8080'
+port: 8080
+resources:
+  memory: 1Gi
+  cpu: '1'

@@ -1,26 +1,16 @@
-"""
-Legal Query Wrapper
-Extracted from: wrapper notebook
-Main entry point for the Legal-SKY pipeline
+from intent_classifier import sementic_intent_classification
+from rag_pipeline import run_rag_pipeline
+from sarvam_translation import translate_rag_output
 
-This module orchestrates the complete legal query processing:
-1. Intent classification
-2. RAG pipeline execution
-3. Answer translation back to original language
-"""
-
-from modules.intent_classifier import sementic_intent_classification
-from modules.rag_pipeline import run_rag_pipeline
-from modules.sarvam_translation import translate_rag_output
-
-
-def handle_user_query(query: str, original_language: str = "en-IN") -> dict:
+def handle_user_query(query: str, original_language: str = "en-IN", conversation_history: list = None, case_summary: str = "") -> dict:
     """
     Complete legal query processing pipeline
     
     Args:
         query: User query in English
         original_language: Original language code for translation (e.g., "hi-IN", "bn-IN")
+        conversation_history: List of previous user queries (for context)
+        case_summary: Summary of the ongoing legal case (for context)
     
     Returns:
         dict containing:
@@ -68,7 +58,7 @@ def handle_user_query(query: str, original_language: str = "en-IN") -> dict:
         print(f"   Generated answer ({len(final_answer_en)} chars)")
         
         # Step 3: Translate back to original language
-        if original_language and original_language != "en-IN":
+        if original_language and original_language != "en-IN" and not original_language.startswith("en"):
             print(f"Step 3: Translating to {original_language}...")
             final_answer = translate_rag_output(
                 final_answer_en, 
@@ -92,7 +82,7 @@ def handle_user_query(query: str, original_language: str = "en-IN") -> dict:
         }
     
     except Exception as e:
-        print(f"❌ Error in handle_user_query: {e}")
+        print(f"Error in handle_user_query: {e}")
         import traceback
         traceback.print_exc()
         

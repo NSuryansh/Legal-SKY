@@ -4,7 +4,6 @@ import { Home, Mic, FileText, Settings, HelpCircle, Shield } from 'lucide-react'
 const Sidebar = ({ activeTab, setActiveTab }) => {
   const menuItems = [
     { id: 'home', label: 'Dashboard', icon: Home },
-    { id: 'voice', label: 'Voice Query', icon: Mic },
     { id: 'documents', label: 'Documents', icon: FileText },
     { id: 'legal', label: 'Legal Services', icon: Shield },
     { id: 'help', label: 'Help', icon: HelpCircle },

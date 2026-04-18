@@ -1,5 +1,5 @@
-# Legal-SKY AI Assistant - Simplified Requirements
-# Core dependencies only for initial deployment
+# Legal-SKY AI Assistant - Complete Requirements
+# Includes all dependencies for RAG pipeline, ML models, and Databricks integration
 
 # ============================================================================
 # CORE WEB FRAMEWORK
@@ -18,6 +18,14 @@ python-multipart==0.0.6
 python-dotenv==1.0.0
 
 # ============================================================================
+# MACHINE LEARNING & NLP
+# ============================================================================
+torch==2.1.2
+transformers==4.36.2
+sentence-transformers==2.3.1
+accelerate==0.25.0
+
+# ============================================================================
 # DATABRICKS & VECTOR SEARCH
 # ============================================================================
 databricks-vectorsearch==0.22
@@ -28,6 +36,14 @@ databricks-sdk==0.17.0
 # ============================================================================
 numpy==1.24.3
 pandas==2.0.3
+scikit-learn==1.3.2
+
+# ============================================================================
+# LANGCHAIN (for RAG)
+# ============================================================================
+langchain==0.1.0
+langchain-community==0.0.13
+langgraph==0.0.20
 
 # ============================================================================
 # TYPE HINTS
